@@ -163,15 +163,13 @@
   .hint { font-size: 12px; color: var(--ink-soft); }
 
   /* ---------- bouquet animation ---------- */
-  .bouquet .sheet, .bouquet .front, .bouquet .ribbon, .bouquet .leaf,
+  .bouquet .wrap, .bouquet .ribbon, .bouquet .leaf,
   .bouquet .cluster, .bouquet .disc, .bouquet .petal { opacity: 0; }
   .static .petal, .static .disc, .static .leaf { opacity: 1; }
 
-  .play .sheet { animation: sheet 1.1s cubic-bezier(.2, .8, .25, 1) both; animation-delay: var(--t); transform-origin: 960px 1450px; }
-  @keyframes sheet { from { opacity: 0; transform: rotate(var(--r)) scale(.35, .2); } 60% { opacity: 1; } to { opacity: 1; transform: none; } }
-
-  .play .front { animation: rise 1s cubic-bezier(.2, .8, .25, 1) both; animation-delay: var(--t); }
-  @keyframes rise { from { opacity: 0; transform: translateY(160px); } to { opacity: 1; transform: none; } }
+  /* the paper is one sheet: its back and front halves unfold together from the neck */
+  .play .wrap { animation: unwrap 1.3s cubic-bezier(.2, .8, .25, 1) both; animation-delay: var(--t); transform-origin: 960px 1500px; }
+  @keyframes unwrap { from { opacity: 0; transform: scale(.45, .12); } 35% { opacity: 1; } to { opacity: 1; transform: none; } }
 
   .play .ribbon { animation: tie .9s cubic-bezier(.3, 1.5, .5, 1) both; animation-delay: var(--t); transform-origin: 955px 1565px; }
   @keyframes tie { from { opacity: 0; transform: scale(.2) rotate(-25deg); } to { opacity: 1; transform: none; } }
@@ -342,7 +340,9 @@
   const all = el("g", { class: "sway-all" }, svg);
 
   // back paper sheets fanning out behind the flowers
-  const back = el("g", { filter: "url(#bsoft)" }, all);
+  const back = el("g", { class: "wrap", style: "--t:2s", filter: "url(#bsoft)" }, all);
+  // one continuous paper silhouette joining every pleat down to the neck
+  el("path", { d: "M780 1470L560 1260L330 920L212 600Q300 500 410 430Q470 330 552 215Q700 165 872 128L884 92Q990 66 1102 78L1132 212Q1270 228 1392 252Q1390 350 1385 450L1525 432Q1640 470 1722 528L1515 960L1300 1290L1140 1470Z", fill: "url(#bpaperL)", stroke: "#d8d1c4", "stroke-width": 3 }, back);
   const sheets = [
     { d: "M450 1060L212 600Q300 500 410 430L585 405L660 980Z", r: -40, t: 2.0, f: "paperL" },
     { d: "M1420 1060L1385 450L1525 432Q1640 470 1722 528L1560 1060Z", r: 40, t: 2.05, f: "paper" },
@@ -351,7 +351,7 @@
     { d: "M858 900L884 92Q990 66 1102 78L1152 900Z", r: 0, t: 2.3, f: "paper" },
   ];
   sheets.forEach(s => {
-    const g = el("g", { class: "sheet", style: `--r:${s.r}deg;--t:${s.t}s` }, back);
+    const g = el("g", { class: "pleat" }, back);
     el("path", { d: s.d, fill: `url(#b${s.f})`, stroke: "#d8d1c4", "stroke-width": 3 }, g);
     // a soft fold shadow down one side of each sheet
     el("path", { d: s.d, fill: "none", stroke: "#b7ad9c", "stroke-opacity": .18, "stroke-width": 16 }, g);
@@ -405,9 +405,9 @@
   ].forEach(o => statice(frontStat, o));
 
   // front wrapping, two layered lips and the narrow neck
-  const front = el("g", { filter: "url(#bsoft)" }, all);
+  const front = el("g", { class: "wrap", style: "--t:2s", filter: "url(#bsoft)" }, all);
   const fr = (d, fill, t, extra = {}) => {
-    const g = el("g", { class: "front", style: `--t:${t}s` }, front);
+    const g = el("g", { class: "pleat" }, front);
     el("path", { d, fill, stroke: "#d6cfc1", "stroke-width": 3, ...extra }, g);
     return g;
   };
