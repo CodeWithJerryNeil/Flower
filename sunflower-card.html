@@ -344,11 +344,11 @@
   // back paper sheets fanning out behind the flowers
   const back = el("g", { filter: "url(#bsoft)" }, all);
   const sheets = [
-    { d: "M450 1060L212 600Q300 500 410 430L585 405L660 980Z", r: -40, t: .15, f: "paperL" },
-    { d: "M1420 1060L1385 450L1525 432Q1640 470 1722 528L1560 1060Z", r: 40, t: .2, f: "paper" },
-    { d: "M560 900L552 215Q700 165 872 128L885 900Z", r: -22, t: .3, f: "paperL" },
-    { d: "M1118 900L1132 212Q1270 228 1392 252L1405 900Z", r: 22, t: .35, f: "paper" },
-    { d: "M858 900L884 92Q990 66 1102 78L1152 900Z", r: 0, t: .45, f: "paper" },
+    { d: "M450 1060L212 600Q300 500 410 430L585 405L660 980Z", r: -40, t: 2.0, f: "paperL" },
+    { d: "M1420 1060L1385 450L1525 432Q1640 470 1722 528L1560 1060Z", r: 40, t: 2.05, f: "paper" },
+    { d: "M560 900L552 215Q700 165 872 128L885 900Z", r: -22, t: 2.15, f: "paperL" },
+    { d: "M1118 900L1132 212Q1270 228 1392 252L1405 900Z", r: 22, t: 2.2, f: "paper" },
+    { d: "M858 900L884 92Q990 66 1102 78L1152 900Z", r: 0, t: 2.3, f: "paper" },
   ];
   sheets.forEach(s => {
     const g = el("g", { class: "sheet", style: `--r:${s.r}deg;--t:${s.t}s` }, back);
@@ -382,26 +382,26 @@
   // seven sunflowers, back to front
   const heads = el("g", {}, all);
   [
-    { x: 690, y: 525, r: 185, rot: -14, sy: .88, t: 1.4 },
-    { x: 1305, y: 640, r: 150, rot: 18, sy: .85, t: 1.65 },
-    { x: 985, y: 565, r: 238, rot: 4, sy: .9, t: 1.5 },
-    { x: 1395, y: 700, r: 165, rot: 22, sy: .82, t: 1.8 },
-    { x: 615, y: 840, r: 215, rot: -12, sy: .93, t: 1.95 },
-    { x: 1250, y: 930, r: 220, rot: 10, sy: .94, t: 2.1 },
-    { x: 925, y: 790, r: 265, rot: -2, sy: .97, t: 2.25 },
+    { x: 690, y: 525, r: 185, rot: -14, sy: .88, t: .1 },
+    { x: 1305, y: 640, r: 150, rot: 18, sy: .85, t: .35 },
+    { x: 985, y: 565, r: 238, rot: 4, sy: .9, t: .2 },
+    { x: 1395, y: 700, r: 165, rot: 22, sy: .82, t: .5 },
+    { x: 615, y: 840, r: 215, rot: -12, sy: .93, t: .65 },
+    { x: 1250, y: 930, r: 220, rot: 10, sy: .94, t: .8 },
+    { x: 925, y: 790, r: 265, rot: -2, sy: .97, t: .95 },
   ].forEach(o => sunflower(heads, "b", o));
 
   // statice peeking in front
   const frontStat = el("g", {}, all);
   [
-    { x: 435, y: 650, w: 60, h: 100, n: 60, t: 2.6, rot: -10 },
-    { x: 590, y: 630, w: 75, h: 55, n: 50, t: 2.65 },
-    { x: 1200, y: 675, w: 45, h: 30, n: 26, t: 2.7 },
-    { x: 1395, y: 775, w: 28, h: 60, n: 28, t: 2.75 },
-    { x: 470, y: 905, w: 55, h: 45, n: 40, t: 2.8 },
-    { x: 670, y: 1060, w: 125, h: 65, n: 110, t: 2.85 },
-    { x: 900, y: 1040, w: 120, h: 65, n: 100, t: 2.9 },
-    { x: 1025, y: 1095, w: 70, h: 40, n: 45, t: 2.95 },
+    { x: 435, y: 650, w: 60, h: 100, n: 60, t: 1.3, rot: -10 },
+    { x: 590, y: 630, w: 75, h: 55, n: 50, t: 1.35 },
+    { x: 1200, y: 675, w: 45, h: 30, n: 26, t: 1.4 },
+    { x: 1395, y: 775, w: 28, h: 60, n: 28, t: 1.45 },
+    { x: 470, y: 905, w: 55, h: 45, n: 40, t: 1.5 },
+    { x: 670, y: 1060, w: 125, h: 65, n: 110, t: 1.55 },
+    { x: 900, y: 1040, w: 120, h: 65, n: 100, t: 1.6 },
+    { x: 1025, y: 1095, w: 70, h: 40, n: 45, t: 1.65 },
   ].forEach(o => statice(frontStat, o));
 
   // front wrapping, two layered lips and the narrow neck
@@ -411,17 +411,17 @@
     el("path", { d, fill, stroke: "#d6cfc1", "stroke-width": 3, ...extra }, g);
     return g;
   };
-  fr("M760 1440L1160 1440C1150 1600 1160 1760 1195 1930L725 1930C760 1760 770 1600 760 1440Z", "url(#bfront)", 0);
-  const f1 = fr("M340 930C420 1045 600 1125 900 1142C1200 1132 1400 1062 1512 950C1522 1050 1482 1142 1402 1212C1252 1322 1152 1382 1122 1462L800 1462C760 1382 640 1312 520 1222C420 1142 360 1052 340 930Z", "url(#bfront)", .05);
+  fr("M760 1440L1160 1440C1150 1600 1160 1760 1195 1930L725 1930C760 1760 770 1600 760 1440Z", "url(#bfront)", 2.5);
+  const f1 = fr("M340 930C420 1045 600 1125 900 1142C1200 1132 1400 1062 1512 950C1522 1050 1482 1142 1402 1212C1252 1322 1152 1382 1122 1462L800 1462C760 1382 640 1312 520 1222C420 1142 360 1052 340 930Z", "url(#bfront)", 2.55);
   el("path", { d: "M340 930C420 1045 600 1125 900 1142C1200 1132 1400 1062 1512 950", fill: "none", stroke: "#ffffff", "stroke-width": 6, "stroke-opacity": .9 }, f1);
-  const f2 = fr("M372 1025C472 1112 652 1172 922 1182C1182 1172 1382 1112 1492 1022C1462 1132 1382 1232 1272 1302C1182 1362 1152 1422 1152 1502L778 1502C770 1422 720 1372 640 1312C520 1222 422 1132 372 1025Z", "url(#bfront)", .1);
+  const f2 = fr("M372 1025C472 1112 652 1172 922 1182C1182 1172 1382 1112 1492 1022C1462 1132 1382 1232 1272 1302C1182 1362 1152 1422 1152 1502L778 1502C770 1422 720 1372 640 1312C520 1222 422 1132 372 1025Z", "url(#bfront)", 2.6);
   el("path", { d: "M372 1025C472 1112 652 1172 922 1182C1182 1172 1382 1112 1492 1022C1462 1132 1382 1232 1272 1302C1182 1362 1152 1422 1152 1502L778 1502C770 1422 720 1372 640 1312C520 1222 422 1132 372 1025Z", fill: "url(#bfrontShade)" }, f2);
   el("path", { d: "M372 1025C472 1112 652 1172 922 1182C1182 1172 1382 1112 1492 1022", fill: "none", stroke: "#ffffff", "stroke-width": 6 }, f2);
   // crease lines on the cone
   el("path", { d: "M620 1240Q760 1330 800 1500M1290 1260Q1170 1360 1150 1500", fill: "none", stroke: "#cfc7b8", "stroke-width": 3, "stroke-opacity": .7 }, f2);
 
   // black satin ribbon bow
-  const rib = el("g", { class: "ribbon", style: "--t:.7s" }, all);
+  const rib = el("g", { class: "ribbon", style: "--t:3.1s" }, all);
   const rp = (d, fill = "url(#bribbon)") => el("path", { d, fill }, rib);
   rp("M728 1548Q955 1585 1186 1545L1192 1600Q955 1640 722 1602Z");
   rp("M935 1585L860 1915L925 1905L950 1945L985 1595Z");
@@ -450,7 +450,7 @@
     void svg.getBoundingClientRect();
     svg.classList.add("play");
     clearTimeout(bloomTimer);
-    bloomTimer = setTimeout(() => card.classList.add("bloomed"), 3900);
+    bloomTimer = setTimeout(() => card.classList.add("bloomed"), 4000);
   }
   function openCard() {
     if (card.classList.contains("open")) return;
