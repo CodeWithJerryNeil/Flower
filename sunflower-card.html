@@ -1,0 +1,509 @@
+<title>Sunflower Bouquet Card</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Marcellus&family=Nunito+Sans:wght@400;600&display=swap">
+<style>
+  /* Layout: one sunlit room, one card in the middle; the cover swings open and the bouquet unwraps inside. */
+  :root {
+    --room: #eee3d4;          /* warm beige wall, like the photo */
+    --room-glow: #fff6e6;     /* window light */
+    --paper: #fbf8f2;         /* card stock */
+    --ink: #3b2c1e;           /* warm brown text */
+    --ink-soft: #7a6450;
+    --petal: #f5b800;         /* sunflower yellow */
+    --statice: #5a33a8;       /* statice purple */
+    --ribbon: #171514;
+    --font-display: "Marcellus", "Cormorant Garamond", Georgia, serif;
+    --font-hand: "Caveat", "Segoe Script", "Bradley Hand", cursive;
+    --font-ui: "Nunito Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--room);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    overflow: hidden;
+  }
+  .room {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding-block: 16px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    background:
+      radial-gradient(ellipse 60% 70% at 88% 18%, var(--room-glow) 0%, rgba(255, 246, 230, 0) 70%),
+      radial-gradient(ellipse 80% 60% at 10% 100%, #e2d3bf 0%, rgba(226, 211, 191, 0) 70%),
+      linear-gradient(180deg, #f2e9dc 0%, var(--room) 60%, #e6d8c5 100%);
+  }
+  /* soft window beams drifting across the room */
+  .beams {
+    position: absolute; inset: -20%;
+    background: repeating-linear-gradient(115deg,
+      rgba(255, 248, 230, 0) 0 70px,
+      rgba(255, 248, 230, .45) 70px 120px,
+      rgba(255, 248, 230, 0) 120px 220px);
+    filter: blur(18px);
+    pointer-events: none;
+    animation: beams 14s ease-in-out infinite alternate;
+  }
+  @keyframes beams { from { transform: translateX(-3%); opacity: .55; } to { transform: translateX(3%); opacity: .9; } }
+  #pollen { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
+
+  /* ---------- card ---------- */
+  .stage { perspective: 1800px; position: relative; z-index: 2; }
+  .card {
+    position: relative;
+    width: min(88vw, 440px, calc((100dvh - 140px) * 0.714));
+    aspect-ratio: 5 / 7;
+    max-width: 100%;
+    transform-style: preserve-3d;
+    transition: transform 1.4s cubic-bezier(.3, .8, .25, 1);
+  }
+  .inside, .cover {
+    position: absolute; inset: 0;
+    border-radius: 6px;
+  }
+  .inside {
+    background:
+      radial-gradient(ellipse 70% 55% at 85% 8%, #fbf3e6 0%, rgba(251, 243, 230, 0) 70%),
+      linear-gradient(180deg, #eadfcf 0%, #e2d3bf 70%, #d9c8b1 100%);
+    box-shadow: 0 30px 60px -25px rgba(80, 55, 25, .45), 0 2px 6px rgba(80, 55, 25, .15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .inside::after { /* faint fold line where the cover hinges */
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 18px;
+    background: linear-gradient(90deg, rgba(120, 95, 60, .12), rgba(120, 95, 60, 0));
+    pointer-events: none;
+  }
+  .bouquet { flex: 1 1 auto; min-height: 0; width: 100%; display: block; }
+  .note {
+    flex: 0 0 auto;
+    padding: 4px 22px 18px;
+    text-align: center;
+    font-family: var(--font-hand);
+    color: var(--ink);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 1.2s ease, transform 1.2s ease;
+  }
+  .card.bloomed .note { opacity: 1; transform: none; }
+  .note [contenteditable] { outline: none; border-radius: 4px; }
+  .note [contenteditable]:focus-visible { box-shadow: 0 0 0 2px rgba(245, 184, 0, .6); }
+  .note .to { font-size: clamp(20px, 5.6vw, 28px); font-weight: 700; line-height: 1.1; }
+  .note .msg { font-size: clamp(17px, 4.6vw, 22px); line-height: 1.15; margin-top: 2px; text-wrap: balance; }
+  .note .from { font-size: clamp(17px, 4.6vw, 22px); font-weight: 700; margin-top: 4px; color: var(--ink-soft); }
+
+  /* cover */
+  .cover {
+    transform-origin: left center;
+    transform-style: preserve-3d;
+    transition: transform 1.5s cubic-bezier(.45, .05, .2, 1), visibility 0s linear 1.5s;
+    cursor: pointer;
+    z-index: 2;
+  }
+  .cover .face, .cover .back {
+    position: absolute; inset: 0; border-radius: 6px;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  }
+  .cover .face {
+    background:
+      radial-gradient(ellipse at 75% 10%, rgba(255, 255, 255, .65), rgba(255, 255, 255, 0) 55%),
+      linear-gradient(160deg, #f8efe0 0%, #efe2cc 100%);
+    box-shadow: 0 30px 60px -25px rgba(80, 55, 25, .5), 0 2px 6px rgba(80, 55, 25, .18), inset 0 0 0 10px #f8efe0, inset 0 0 0 11px rgba(160, 120, 60, .35);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; padding: 28px; text-align: center;
+  }
+  .cover .back {
+    transform: rotateY(180deg);
+    background: linear-gradient(200deg, #f3ead9, #e9dcc6);
+  }
+  .cover svg { width: 58%; max-width: 100%; height: auto; filter: drop-shadow(0 6px 10px rgba(120, 80, 20, .25)); }
+  .cover h1 {
+    margin: 10px 0 0;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(26px, 7vw, 36px);
+    letter-spacing: .02em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+  .cover .for { font-family: var(--font-hand); font-size: clamp(24px, 6.5vw, 32px); color: #a06a00; margin-top: -6px; }
+  .open-btn {
+    margin-top: 14px;
+    font: 600 12px/1 var(--font-ui);
+    letter-spacing: .16em; text-transform: uppercase;
+    color: var(--paper); background: var(--ink);
+    border: 0; border-radius: 999px; padding: 12px 22px; cursor: pointer;
+    animation: nudge 2.4s ease-in-out infinite;
+  }
+  .open-btn:focus-visible { outline: 3px solid var(--petal); outline-offset: 3px; }
+  @keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  .card.open .cover { transform: rotateY(-178deg); visibility: hidden; pointer-events: none; }
+  .card.open { transform: translateX(0); }
+
+  .controls { display: flex; gap: 10px; align-items: center; z-index: 4; opacity: 0; transition: opacity .8s ease 1s; flex-wrap: wrap; justify-content: center; }
+  .card-open-state .controls { opacity: 1; }
+  .controls button {
+    font: 600 12px/1 var(--font-ui); letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink); background: rgba(255, 252, 245, .75);
+    border: 1px solid rgba(59, 44, 30, .25); border-radius: 999px; padding: 10px 16px; cursor: pointer;
+  }
+  .controls button:hover { background: #fffdf8; }
+  .controls button:focus-visible { outline: 3px solid var(--petal); outline-offset: 2px; }
+  .hint { font-size: 12px; color: var(--ink-soft); }
+
+  /* ---------- bouquet animation ---------- */
+  .bouquet .sheet, .bouquet .front, .bouquet .ribbon, .bouquet .leaf,
+  .bouquet .cluster, .bouquet .disc, .bouquet .petal { opacity: 0; }
+  .static .petal, .static .disc, .static .leaf { opacity: 1; }
+
+  .play .sheet { animation: sheet 1.1s cubic-bezier(.2, .8, .25, 1) both; animation-delay: var(--t); transform-origin: 960px 1450px; }
+  @keyframes sheet { from { opacity: 0; transform: rotate(var(--r)) scale(.35, .2); } 60% { opacity: 1; } to { opacity: 1; transform: none; } }
+
+  .play .front { animation: rise 1s cubic-bezier(.2, .8, .25, 1) both; animation-delay: var(--t); }
+  @keyframes rise { from { opacity: 0; transform: translateY(160px); } to { opacity: 1; transform: none; } }
+
+  .play .ribbon { animation: tie .9s cubic-bezier(.3, 1.5, .5, 1) both; animation-delay: var(--t); transform-origin: 955px 1565px; }
+  @keyframes tie { from { opacity: 0; transform: scale(.2) rotate(-25deg); } to { opacity: 1; transform: none; } }
+
+  .play .leaf { animation: grow .9s cubic-bezier(.2, .9, .3, 1.15) both; animation-delay: var(--t); transform-origin: 0 0; }
+  @keyframes grow { from { opacity: 0; transform: scale(0) rotate(-20deg); } to { opacity: 1; transform: none; } }
+
+  .play .cluster { animation: pop .8s cubic-bezier(.3, 1.4, .5, 1) both; animation-delay: var(--t); transform-origin: 0 0; }
+  @keyframes pop { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: none; } }
+
+  .play .disc { animation: pop .7s cubic-bezier(.3, 1.4, .5, 1) both; animation-delay: var(--t); transform-origin: 0 0; }
+  .play .petal { animation: unfurl .75s cubic-bezier(.2, .9, .3, 1.2) both; animation-delay: var(--t); transform-origin: 0 0; }
+  @keyframes unfurl { from { opacity: 0; transform: scale(.05, 0) rotate(-35deg); } 40% { opacity: 1; } to { opacity: 1; transform: none; } }
+
+  /* idle life once open */
+  .sway-all { transform-origin: 960px 1700px; animation: swayAll 7s ease-in-out infinite alternate; }
+  @keyframes swayAll { from { transform: rotate(-1.1deg); } to { transform: rotate(1.1deg); } }
+  .head-sway { transform-origin: 0 0; animation: headSway var(--d) ease-in-out infinite alternate; }
+  @keyframes headSway { from { transform: rotate(calc(var(--a) * -1)); } to { transform: rotate(var(--a)); } }
+  .stat-sway { transform-origin: 0 40px; animation: headSway var(--d) ease-in-out infinite alternate; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01s !important; animation-delay: 0s !important; transition-duration: .01s !important; transition-delay: 0s !important; animation-iteration-count: 1 !important; }
+  }
+</style>
+
+<main class="room" id="room">
+  <div class="beams" aria-hidden="true"></div>
+  <canvas id="pollen" aria-hidden="true"></canvas>
+
+  <div class="stage">
+    <div class="card" id="card">
+      <section class="inside" aria-label="Inside of the card">
+        <svg class="bouquet" id="bouquet" viewBox="170 40 1600 1880" preserveAspectRatio="xMidYMid meet" role="img" aria-label="A bouquet of seven sunflowers and purple statice, wrapped in white paper and tied with a black ribbon"></svg>
+        <div class="note">
+          <div class="to" id="note-to" contenteditable="true" spellcheck="false" aria-label="Recipient">For you,</div>
+          <div class="msg" id="note-msg" contenteditable="true" spellcheck="false" aria-label="Message">may your days be as bright and warm as these sunflowers.</div>
+          <div class="from" id="note-from" contenteditable="true" spellcheck="false" aria-label="Signature">With love ♥</div>
+        </div>
+      </section>
+
+      <div class="cover" id="cover" role="button" tabindex="-1" aria-label="Open the card">
+        <div class="face">
+          <svg id="coverFlower" viewBox="-170 -170 340 340" aria-hidden="true"></svg>
+          <h1>A little sunshine</h1>
+          <div class="for">just for you</div>
+          <button class="open-btn" id="openBtn" type="button">Open card</button>
+        </div>
+        <div class="back"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls" id="controls">
+    <button type="button" id="replayBtn">Replay bloom</button>
+    <button type="button" id="closeBtn">Close card</button>
+    <span class="hint">Tap the note to write your own</span>
+  </div>
+</main>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  let seed = 20261124;
+  const rnd = () => (seed = (seed * 16807) % 2147483647, (seed - 1) / 2147483646);
+  const R = (a, b) => a + rnd() * (b - a);
+  const pick = arr => arr[Math.floor(rnd() * arr.length)];
+
+  /* ---------- shared gradients ---------- */
+  function defs(svg, p) {
+    const d = el("defs", {}, svg);
+    const lin = (id, stops, a = { x1: 0, y1: 1, x2: 0, y2: 0 }) => {
+      const g = el("linearGradient", { id: p + id, ...a }, d);
+      stops.forEach(([o, c, op]) => el("stop", { offset: o, "stop-color": c, "stop-opacity": op ?? 1 }, g));
+    };
+    const rad = (id, stops, a = {}) => {
+      const g = el("radialGradient", { id: p + id, ...a }, d);
+      stops.forEach(([o, c, op]) => el("stop", { offset: o, "stop-color": c, "stop-opacity": op ?? 1 }, g));
+    };
+    lin("petalBack", [["0", "#b86e00"], [".45", "#e3a000"], ["1", "#f7c21a"]]);
+    lin("petalFront", [["0", "#d98c00"], [".35", "#f5b400"], [".8", "#ffd02a"], ["1", "#ffdc4a"]]);
+    lin("petalInner", [["0", "#9a5a00"], ["1", "#e9a400"]]);
+    rad("disc", [["0", "#1d1f0c"], [".28", "#2b2a10"], [".55", "#43300d"], [".85", "#5e3a10"], ["1", "#7a4b12"]]);
+    rad("discShine", [["0", "#ffffff", .22], ["1", "#ffffff", 0]], { cx: ".35", cy: ".3", r: ".6" });
+    lin("leaf", [["0", "#234a18"], [".6", "#3f6e28"], ["1", "#6a9a3c"]]);
+    lin("paper", [["0", "#ffffff"], [".55", "#f8f6f1"], ["1", "#e7e2d8"]], { x1: 0, y1: 0, x2: 1, y2: 1 });
+    lin("paperL", [["0", "#ece7dd"], [".5", "#ffffff"], ["1", "#f3f0ea"]], { x1: 0, y1: 0, x2: 1, y2: 0 });
+    lin("front", [["0", "#fffefa"], [".55", "#f7f4ee"], ["1", "#e2ddd2"]], { x1: 0, y1: 0, x2: 1, y2: .3 });
+    lin("frontShade", [["0", "#000000", 0], [".7", "#5a4a30", 0], ["1", "#5a4a30", .16]], { x1: 0, y1: 0, x2: 0, y2: 1 });
+    lin("ribbon", [["0", "#060606"], [".45", "#2c2a28"], [".55", "#3a3734"], ["1", "#0b0b0b"]], { x1: 0, y1: 0, x2: 1, y2: 1 });
+    const f = el("filter", { id: p + "soft", x: "-20%", y: "-20%", width: "140%", height: "140%" }, d);
+    el("feDropShadow", { dx: 0, dy: 10, stdDeviation: 14, "flood-color": "#6b4f2a", "flood-opacity": .22 }, f);
+    const f2 = el("filter", { id: p + "headShadow", x: "-30%", y: "-30%", width: "160%", height: "160%" }, d);
+    el("feDropShadow", { dx: 0, dy: 6, stdDeviation: 7, "flood-color": "#3a2400", "flood-opacity": .35 }, f2);
+  }
+
+  const petalD = (L, w) =>
+    `M0 0C${w} ${-L * .22} ${w * 1.05} ${-L * .7} ${w * .22} ${-L * .96}Q0 ${-L * 1.04} ${-w * .22} ${-L * .96}C${-w * 1.05} ${-L * .7} ${-w} ${-L * .22} 0 0Z`;
+
+  /* ---------- one sunflower head ---------- */
+  function sunflower(parent, p, o) {
+    const { x, y, r, rot = 0, sy = 1, t = 0 } = o;
+    const g0 = el("g", { transform: `translate(${x} ${y})` }, parent);
+    const sway = el("g", { class: "head-sway", style: `--d:${R(4.5, 7.5).toFixed(2)}s;--a:${R(1.2, 2.6).toFixed(2)}deg` }, g0);
+    const tilt = el("g", { transform: `rotate(${rot}) scale(1 ${sy})`, filter: `url(#${p}headShadow)` }, sway);
+    const disc = r * .4;
+    const ring = (n, Lr, wr, fill, base, off, t0, step) => {
+      for (let i = 0; i < n; i++) {
+        const a = (i + off) * 360 / n + R(-4, 4);
+        const g = el("g", { transform: `rotate(${a.toFixed(2)}) translate(0 ${(-disc * base).toFixed(1)})` }, tilt);
+        const L = r * R(Lr[0], Lr[1]), w = r * R(wr[0], wr[1]);
+        const pg = el("g", { class: "petal", style: `--t:${(t0 + i * step).toFixed(3)}s` }, g);
+        el("path", { d: petalD(L, w), fill: `url(#${p}${fill})` }, pg);
+        el("path", { d: `M0 ${-L * .08}Q${R(-2, 2)} ${-L * .5} 0 ${-L * .86}`, stroke: "#b77400", "stroke-opacity": .35, "stroke-width": Math.max(1.2, r * .008), fill: "none" }, pg);
+      }
+    };
+    ring(26, [.6, .68], [.13, .16], "petalBack", .82, 0, t + .35, .018);
+    ring(24, [.52, .62], [.12, .15], "petalFront", .86, .5, t + .6, .02);
+    ring(22, [.2, .3], [.09, .12], "petalInner", .9, .25, t + .85, .015);
+
+    const dg = el("g", { class: "disc", style: `--t:${t.toFixed(2)}s` }, tilt);
+    el("circle", { r: disc, fill: `url(#${p}disc)` }, dg);
+    const N = Math.round(disc * disc / 40);
+    for (let k = 1; k <= N; k++) {
+      const ang = k * 2.39996, rr = disc * .93 * Math.sqrt(k / N), q = rr / disc;
+      const col = q < .32 ? pick(["#2f2f14", "#3b3816", "#262710"]) : q < .7 ? pick(["#4a300c", "#56370e", "#3f280a"]) : pick(["#70440f", "#80521a", "#5e3a0c", "#a06a1c"]);
+      el("circle", { cx: (Math.cos(ang) * rr).toFixed(1), cy: (Math.sin(ang) * rr).toFixed(1), r: (disc * (.03 + .03 * q)).toFixed(2), fill: col }, dg);
+    }
+    el("circle", { r: disc * .97, fill: "none", stroke: "#8a5a14", "stroke-width": disc * .06, "stroke-opacity": .55, "stroke-dasharray": `${disc * .05} ${disc * .04}` }, dg);
+    el("circle", { r: disc, fill: `url(#${p}discShine)` }, dg);
+  }
+
+  /* ---------- purple statice cluster ---------- */
+  function statice(parent, o) {
+    const { x, y, w, h, n, t, rot = 0 } = o;
+    const g0 = el("g", { transform: `translate(${x} ${y}) rotate(${rot})` }, parent);
+    const sw = el("g", { class: "stat-sway", style: `--d:${R(3.5, 6).toFixed(2)}s;--a:${R(1.5, 3.5).toFixed(2)}deg` }, g0);
+    const c = el("g", { class: "cluster", style: `--t:${t.toFixed(2)}s` }, sw);
+    for (let i = 0; i < 4; i++)
+      el("path", { d: `M${R(-w * .4, w * .4)} ${R(-h * .2, h * .3)}Q${R(-20, 20)} ${h * .6} ${R(-10, 10)} ${h * 1.1}`, stroke: "#4c6b2e", "stroke-width": 5, fill: "none", "stroke-linecap": "round" }, c);
+    const cols = ["#2d1560", "#3b1f7a", "#4a2892", "#5a33a8", "#6a43bd", "#7a55cc"];
+    for (let i = 0; i < n; i++) {
+      const a = R(0, Math.PI * 2), d = Math.sqrt(rnd());
+      const cx = Math.cos(a) * d * w, cy = Math.sin(a) * d * h;
+      const rr = R(8, 17) * (1.1 - d * .4);
+      el("circle", { cx: cx.toFixed(1), cy: cy.toFixed(1), r: rr.toFixed(1), fill: pick(cols) }, c);
+      if (rnd() < .22) el("circle", { cx: (cx + R(-4, 4)).toFixed(1), cy: (cy + R(-4, 4)).toFixed(1), r: R(2, 3.6).toFixed(1), fill: "#efe9ff", "fill-opacity": .85 }, c);
+    }
+  }
+
+  function leaf(parent, o) {
+    const { x, y, s, rot, t } = o;
+    const g = el("g", { transform: `translate(${x} ${y}) rotate(${rot}) scale(${s})` }, parent);
+    const lg = el("g", { class: "leaf", style: `--t:${t.toFixed(2)}s` }, g);
+    el("path", { d: "M0 0C45 -35 52 -95 0 -150C-52 -95 -45 -35 0 0Z", fill: "url(#bleaf)" }, lg);
+    el("path", { d: "M0 -6Q4 -70 0 -138", stroke: "#1d3a12", "stroke-opacity": .5, "stroke-width": 3, fill: "none" }, lg);
+  }
+
+  /* ---------- build the bouquet (coordinates follow the photo) ---------- */
+  const svg = document.getElementById("bouquet");
+  defs(svg, "b");
+  const all = el("g", { class: "sway-all" }, svg);
+
+  // back paper sheets fanning out behind the flowers
+  const back = el("g", { filter: "url(#bsoft)" }, all);
+  const sheets = [
+    { d: "M450 1060L212 600Q300 500 410 430L585 405L660 980Z", r: -40, t: .15, f: "paperL" },
+    { d: "M1420 1060L1385 450L1525 432Q1640 470 1722 528L1560 1060Z", r: 40, t: .2, f: "paper" },
+    { d: "M560 900L552 215Q700 165 872 128L885 900Z", r: -22, t: .3, f: "paperL" },
+    { d: "M1118 900L1132 212Q1270 228 1392 252L1405 900Z", r: 22, t: .35, f: "paper" },
+    { d: "M858 900L884 92Q990 66 1102 78L1152 900Z", r: 0, t: .45, f: "paper" },
+  ];
+  sheets.forEach(s => {
+    const g = el("g", { class: "sheet", style: `--r:${s.r}deg;--t:${s.t}s` }, back);
+    el("path", { d: s.d, fill: `url(#b${s.f})`, stroke: "#d8d1c4", "stroke-width": 3 }, g);
+    // a soft fold shadow down one side of each sheet
+    el("path", { d: s.d, fill: "none", stroke: "#b7ad9c", "stroke-opacity": .18, "stroke-width": 16 }, g);
+  });
+
+  // statice behind the flowers
+  const backStat = el("g", {}, all);
+  [
+    { x: 800, y: 380, w: 55, h: 95, n: 60, t: 1.0, rot: 8 },
+    { x: 1180, y: 480, w: 55, h: 50, n: 40, t: 1.1 },
+    { x: 1425, y: 580, w: 55, h: 50, n: 40, t: 1.15, rot: 15 },
+    { x: 1440, y: 655, w: 35, h: 35, n: 22, t: 1.2 },
+    { x: 1395, y: 770, w: 30, h: 70, n: 35, t: 1.25 },
+    { x: 1225, y: 685, w: 60, h: 35, n: 35, t: 1.2 },
+    { x: 1440, y: 1035, w: 30, h: 35, n: 18, t: 1.3 },
+  ].forEach(o => statice(backStat, o));
+
+  // leaves tucked between heads
+  const leaves = el("g", {}, all);
+  [
+    { x: 520, y: 760, s: 1.1, rot: -55, t: .9 }, { x: 800, y: 680, s: .9, rot: -10, t: .95 },
+    { x: 1120, y: 660, s: .9, rot: 25, t: 1 }, { x: 1360, y: 860, s: 1, rot: 70, t: 1.05 },
+    { x: 760, y: 1020, s: 1.1, rot: -120, t: 1.1 }, { x: 1080, y: 1050, s: 1.1, rot: 140, t: 1.1 },
+    { x: 1150, y: 780, s: .8, rot: 40, t: 1.15 }, { x: 560, y: 1010, s: 1, rot: -95, t: 1.15 },
+    { x: 1040, y: 980, s: 1.2, rot: 170, t: 1.2 }, { x: 960, y: 1080, s: 1, rot: 185, t: 1.2 },
+  ].forEach(o => leaf(leaves, o));
+
+  // seven sunflowers, back to front
+  const heads = el("g", {}, all);
+  [
+    { x: 690, y: 525, r: 185, rot: -14, sy: .88, t: 1.4 },
+    { x: 1305, y: 640, r: 150, rot: 18, sy: .85, t: 1.65 },
+    { x: 985, y: 565, r: 238, rot: 4, sy: .9, t: 1.5 },
+    { x: 1395, y: 700, r: 165, rot: 22, sy: .82, t: 1.8 },
+    { x: 615, y: 840, r: 215, rot: -12, sy: .93, t: 1.95 },
+    { x: 1250, y: 930, r: 220, rot: 10, sy: .94, t: 2.1 },
+    { x: 925, y: 790, r: 265, rot: -2, sy: .97, t: 2.25 },
+  ].forEach(o => sunflower(heads, "b", o));
+
+  // statice peeking in front
+  const frontStat = el("g", {}, all);
+  [
+    { x: 435, y: 650, w: 60, h: 100, n: 60, t: 2.6, rot: -10 },
+    { x: 590, y: 630, w: 75, h: 55, n: 50, t: 2.65 },
+    { x: 1200, y: 675, w: 45, h: 30, n: 26, t: 2.7 },
+    { x: 1395, y: 775, w: 28, h: 60, n: 28, t: 2.75 },
+    { x: 470, y: 905, w: 55, h: 45, n: 40, t: 2.8 },
+    { x: 670, y: 1060, w: 125, h: 65, n: 110, t: 2.85 },
+    { x: 900, y: 1040, w: 120, h: 65, n: 100, t: 2.9 },
+    { x: 1025, y: 1095, w: 70, h: 40, n: 45, t: 2.95 },
+  ].forEach(o => statice(frontStat, o));
+
+  // front wrapping, two layered lips and the narrow neck
+  const front = el("g", { filter: "url(#bsoft)" }, all);
+  const fr = (d, fill, t, extra = {}) => {
+    const g = el("g", { class: "front", style: `--t:${t}s` }, front);
+    el("path", { d, fill, stroke: "#d6cfc1", "stroke-width": 3, ...extra }, g);
+    return g;
+  };
+  fr("M760 1440L1160 1440C1150 1600 1160 1760 1195 1930L725 1930C760 1760 770 1600 760 1440Z", "url(#bfront)", 0);
+  const f1 = fr("M340 930C420 1045 600 1125 900 1142C1200 1132 1400 1062 1512 950C1522 1050 1482 1142 1402 1212C1252 1322 1152 1382 1122 1462L800 1462C760 1382 640 1312 520 1222C420 1142 360 1052 340 930Z", "url(#bfront)", .05);
+  el("path", { d: "M340 930C420 1045 600 1125 900 1142C1200 1132 1400 1062 1512 950", fill: "none", stroke: "#ffffff", "stroke-width": 6, "stroke-opacity": .9 }, f1);
+  const f2 = fr("M372 1025C472 1112 652 1172 922 1182C1182 1172 1382 1112 1492 1022C1462 1132 1382 1232 1272 1302C1182 1362 1152 1422 1152 1502L778 1502C770 1422 720 1372 640 1312C520 1222 422 1132 372 1025Z", "url(#bfront)", .1);
+  el("path", { d: "M372 1025C472 1112 652 1172 922 1182C1182 1172 1382 1112 1492 1022C1462 1132 1382 1232 1272 1302C1182 1362 1152 1422 1152 1502L778 1502C770 1422 720 1372 640 1312C520 1222 422 1132 372 1025Z", fill: "url(#bfrontShade)" }, f2);
+  el("path", { d: "M372 1025C472 1112 652 1172 922 1182C1182 1172 1382 1112 1492 1022", fill: "none", stroke: "#ffffff", "stroke-width": 6 }, f2);
+  // crease lines on the cone
+  el("path", { d: "M620 1240Q760 1330 800 1500M1290 1260Q1170 1360 1150 1500", fill: "none", stroke: "#cfc7b8", "stroke-width": 3, "stroke-opacity": .7 }, f2);
+
+  // black satin ribbon bow
+  const rib = el("g", { class: "ribbon", style: "--t:.7s" }, all);
+  const rp = (d, fill = "url(#bribbon)") => el("path", { d, fill }, rib);
+  rp("M728 1548Q955 1585 1186 1545L1192 1600Q955 1640 722 1602Z");
+  rp("M935 1585L860 1915L925 1905L950 1945L985 1595Z");
+  rp("M975 1585L1080 1900L1140 1880L1175 1915L1010 1580Z");
+  rp("M955 1570C860 1500 700 1500 650 1555C640 1610 790 1640 950 1600Z");
+  rp("M955 1570C1050 1500 1205 1505 1240 1555C1240 1610 1100 1640 960 1600Z");
+  rp("M955 1572C880 1540 760 1535 705 1560C780 1572 870 1585 955 1590Z", "#000000");
+  rp("M958 1572C1035 1540 1150 1538 1195 1560C1125 1574 1040 1586 958 1590Z", "#000000");
+  el("ellipse", { cx: 955, cy: 1585, rx: 38, ry: 30, fill: "url(#bribbon)" }, rib);
+  el("path", { d: "M690 1548C760 1520 850 1525 920 1560M1000 1556C1070 1522 1160 1520 1220 1545M935 1600L880 1880M990 1600L1095 1860", fill: "none", stroke: "#ffffff", "stroke-opacity": .16, "stroke-width": 6, "stroke-linecap": "round" }, rib);
+  el("ellipse", { cx: 945, cy: 1575, rx: 14, ry: 7, fill: "#ffffff", "fill-opacity": .18 }, rib);
+
+  /* ---------- small static sunflower on the cover ---------- */
+  const cs = document.getElementById("coverFlower");
+  cs.classList.add("static");
+  defs(cs, "c");
+  sunflower(cs, "c", { x: 0, y: 0, r: 160, t: 0 });
+
+  /* ---------- open / replay / close ---------- */
+  const card = document.getElementById("card");
+  const room = document.getElementById("room");
+  let bloomTimer;
+  function play() {
+    svg.classList.remove("play");
+    card.classList.remove("bloomed");
+    void svg.getBoundingClientRect();
+    svg.classList.add("play");
+    clearTimeout(bloomTimer);
+    bloomTimer = setTimeout(() => card.classList.add("bloomed"), 3900);
+  }
+  function openCard() {
+    if (card.classList.contains("open")) return;
+    card.classList.add("open");
+    room.classList.add("card-open-state");
+    setTimeout(play, 450);
+  }
+  function closeCard() {
+    card.classList.remove("open", "bloomed");
+    room.classList.remove("card-open-state");
+    setTimeout(() => svg.classList.remove("play"), 900);
+    document.getElementById("openBtn").focus();
+  }
+  document.getElementById("cover").addEventListener("click", openCard);
+  document.getElementById("openBtn").addEventListener("click", e => { e.stopPropagation(); openCard(); });
+  document.getElementById("replayBtn").addEventListener("click", play);
+  document.getElementById("closeBtn").addEventListener("click", closeCard);
+
+  // remember the viewer's own note text
+  ["note-to", "note-msg", "note-from"].forEach(id => {
+    const n = document.getElementById(id);
+    try { const v = localStorage.getItem("sunflower-" + id); if (v) n.textContent = v; } catch (e) {}
+    n.addEventListener("input", () => { try { localStorage.setItem("sunflower-" + id, n.textContent); } catch (e) {} });
+    n.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); n.blur(); } });
+  });
+
+  /* ---------- drifting pollen in the window light ---------- */
+  const cv = document.getElementById("pollen");
+  const ctx = cv.getContext("2d");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let W, H, motes = [];
+  function size() {
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  size(); addEventListener("resize", size);
+  for (let i = 0; i < 46; i++) motes.push({ x: Math.random(), y: Math.random(), r: .8 + Math.random() * 2.4, s: .00006 + Math.random() * .00018, ph: Math.random() * 6.28 });
+  function frame(ts) {
+    ctx.clearRect(0, 0, W, H);
+    for (const m of motes) {
+      if (!reduce) { m.y -= m.s * 16; if (m.y < -.05) { m.y = 1.05; m.x = Math.random(); } }
+      const x = (m.x + Math.sin(ts / 2400 + m.ph) * .015) * W, y = m.y * H;
+      const a = .35 + .35 * Math.sin(ts / 900 + m.ph);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, m.r * 4);
+      g.addColorStop(0, `rgba(255, 214, 120, ${a})`);
+      g.addColorStop(1, "rgba(255, 214, 120, 0)");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, y, m.r * 4, 0, 6.283); ctx.fill();
+    }
+    if (!reduce) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
