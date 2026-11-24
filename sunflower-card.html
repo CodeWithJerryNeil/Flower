@@ -105,8 +105,7 @@
     background: linear-gradient(90deg, rgba(120, 95, 60, .12), rgba(120, 95, 60, 0));
     pointer-events: none;
   }
-  .bouquet-wrap { flex: 1 1 auto; min-height: 0; width: 100%; position: relative; }
-  .bouquet { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .bouquet { flex: 1 1 auto; min-height: 0; width: 100%; display: block; }
   .note {
     flex: 0 0 auto;
     padding: 4px 22px 18px;
@@ -197,12 +196,11 @@
   @keyframes unfurl { from { opacity: 0; transform: scale(.05, 0) rotate(-35deg); } 40% { opacity: 1; } to { opacity: 1; transform: none; } }
 
   /* idle life once open */
-  /* the sway moves a plain wrapper, not the SVG itself, which iPhone Safari can blank out */
-  .card.bloomed .bouquet-wrap { transform-origin: 50% 95%; animation: swayAll 7s ease-in-out infinite alternate; }
+  .sway-all { transform-origin: 960px 1700px; animation: swayAll 7s ease-in-out infinite alternate; }
   /* head shadows are added once the bloom finishes, so the opening animation stays light */
   /* on phones and tablets, skip the per-flower sway: it forces the whole drawing to repaint every frame */
   @media (hover: none), (max-width: 700px) {
-    .head-sway, .stat-sway { animation: none !important; }
+    .sway-all, .head-sway, .stat-sway { animation: none !important; }
   }
   @keyframes swayAll { from { transform: rotate(-.8deg); } to { transform: rotate(.8deg); } }
   .head-sway { transform-origin: 0 0; animation: headSway var(--d) ease-in-out infinite alternate; }
@@ -221,7 +219,7 @@
   <div class="stage">
     <div class="card" id="card">
       <section class="inside" aria-label="Inside of the card">
-        <div class="bouquet-wrap"><svg class="bouquet" id="bouquet" viewBox="170 40 1600 1880" preserveAspectRatio="xMidYMid meet" role="img" aria-label="A bouquet of seven sunflowers and purple statice, wrapped in white paper and tied with a black ribbon"></svg></div>
+        <svg class="bouquet" id="bouquet" viewBox="170 40 1600 1880" preserveAspectRatio="xMidYMid meet" role="img" aria-label="A bouquet of seven sunflowers and purple statice, wrapped in white paper and tied with a black ribbon"></svg>
         <div class="note">
           <div class="to">For you,</div>
           <div class="msg">may your days be as bright and warm as these sunflowers.</div>
@@ -295,7 +293,7 @@
     const { x, y, r, rot = 0, sy = 1, t = 0 } = o;
     const g0 = el("g", { transform: `translate(${x} ${y})` }, parent);
     const sway = el("g", { class: "head-sway", style: `--d:${R(4.5, 7.5).toFixed(2)}s;--a:${R(1.2, 2.6).toFixed(2)}deg` }, g0);
-    const tilt = el("g", p === "b" ? { class: "tilt", transform: `rotate(${rot}) scale(1 ${sy})` } : { transform: `rotate(${rot}) scale(1 ${sy})`, filter: `url(#${p}headShadow)` }, sway);
+    const tilt = el("g", p === "b" && SMALL ? { transform: `rotate(${rot}) scale(1 ${sy})` } : { transform: `rotate(${rot}) scale(1 ${sy})`, filter: `url(#${p}headShadow)` }, sway);
     const disc = r * .4;
     const ring = (n, Lr, wr, fill, base, off, t0, step) => {
       for (let i = 0; i < n; i++) {
@@ -576,12 +574,7 @@
     void svg.getBoundingClientRect();
     svg.classList.add("play");
     clearTimeout(bloomTimer);
-    svg.querySelectorAll(".tilt").forEach(t => t.removeAttribute("filter"));
-    bloomTimer = setTimeout(() => {
-      // flower shadows go on as a plain SVG attribute once the bloom is done
-      svg.querySelectorAll(".tilt").forEach(t => t.setAttribute("filter", "url(#bheadShadow)"));
-      card.classList.add("bloomed");
-    }, 4000);
+    bloomTimer = setTimeout(() => card.classList.add("bloomed"), 4000);
   }
   (window.requestIdleCallback || (f => setTimeout(f, 200)))(buildBouquet, { timeout: 1500 });
   function openCard() {
