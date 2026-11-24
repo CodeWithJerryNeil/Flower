@@ -117,6 +117,7 @@
     transition: opacity 1.2s ease, transform 1.2s ease;
   }
   .card.bloomed .note { opacity: 1; transform: none; }
+  .card.bloomed .inside { cursor: pointer; }
   .note [contenteditable] { outline: none; border-radius: 4px; }
   .note [contenteditable]:focus-visible { box-shadow: 0 0 0 2px rgba(245, 184, 0, .6); }
   .note .to { font-size: clamp(20px, 5.6vw, 28px); font-weight: 700; line-height: 1.1; }
@@ -585,11 +586,19 @@
     setTimeout(play, 450);
   }
   function closeCard() {
+    clearTimeout(bloomTimer);
     card.classList.remove("open", "bloomed");
     room.classList.remove("card-open-state");
     setTimeout(() => svg.classList.remove("play"), 900);
-    document.getElementById("openBtn").focus();
+    document.getElementById("openBtn").focus({ preventScroll: true });
   }
+  // once the bouquet and note have finished, tapping the card closes it again
+  document.querySelector(".inside").addEventListener("click", () => {
+    if (card.classList.contains("bloomed")) closeCard();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && card.classList.contains("bloomed")) closeCard();
+  });
   document.getElementById("cover").addEventListener("click", openCard);
   document.getElementById("openBtn").addEventListener("click", e => { e.stopPropagation(); openCard(); });
 
