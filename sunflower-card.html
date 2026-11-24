@@ -1,6 +1,20 @@
 <title>Sunflower Bouquet Card</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A little sunshine just for you: open the card to watch a bouquet of sunflowers bloom.">
+<meta name="theme-color" content="#eee3d4">
+<meta property="og:type" content="website">
+<meta property="og:title" content="A little sunshine, just for you">
+<meta property="og:description" content="Open the card to watch a bouquet of sunflowers bloom.">
+<meta property="og:image" content="https://codewithjerryneil.github.io/Flower/dist/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://codewithjerryneil.github.io/Flower/dist/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://codewithjerryneil.github.io/Flower/dist/og-image.jpg">
+<link rel="icon" type="image/png" href="https://codewithjerryneil.github.io/Flower/dist/icon.png">
+<link rel="apple-touch-icon" href="https://codewithjerryneil.github.io/Flower/dist/icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Marcellus&family=Nunito+Sans:wght@400;600&display=swap">
 <style>
   /* Layout: one sunlit room, one card in the middle; the cover swings open and the bouquet unwraps inside. */
@@ -46,13 +60,16 @@
   /* soft window beams drifting across the room */
   .beams {
     position: absolute; inset: -20%;
+    /* soft gradient stops give the blurred look without a costly blur filter */
     background: repeating-linear-gradient(115deg,
-      rgba(255, 248, 230, 0) 0 70px,
-      rgba(255, 248, 230, .45) 70px 120px,
-      rgba(255, 248, 230, 0) 120px 220px);
-    filter: blur(18px);
+      rgba(255, 248, 230, 0) 0px,
+      rgba(255, 248, 230, 0) 50px,
+      rgba(255, 248, 230, .38) 95px,
+      rgba(255, 248, 230, 0) 140px,
+      rgba(255, 248, 230, 0) 220px);
     pointer-events: none;
     animation: beams 14s ease-in-out infinite alternate;
+    will-change: transform, opacity;
   }
   @keyframes beams { from { transform: translateX(-3%); opacity: .55; } to { transform: translateX(3%); opacity: .9; } }
   #pollen { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
@@ -176,8 +193,15 @@
   @keyframes unfurl { from { opacity: 0; transform: scale(.05, 0) rotate(-35deg); } 40% { opacity: 1; } to { opacity: 1; transform: none; } }
 
   /* idle life once open */
-  .sway-all { transform-origin: 960px 1700px; animation: swayAll 7s ease-in-out infinite alternate; }
-  @keyframes swayAll { from { transform: rotate(-1.1deg); } to { transform: rotate(1.1deg); } }
+  .card.bloomed .bouquet { transform-origin: 50% 95%; animation: swayAll 7s ease-in-out infinite alternate; will-change: transform; }
+  /* head shadows are added once the bloom finishes, so the opening animation stays light */
+  .bouquet .tilt { filter: none; }
+  .card.bloomed .bouquet .tilt { filter: url(#bheadShadow); }
+  /* on phones and tablets, skip the per-flower sway: it forces the whole drawing to repaint every frame */
+  @media (hover: none), (max-width: 700px) {
+    .head-sway, .stat-sway { animation: none !important; }
+  }
+  @keyframes swayAll { from { transform: rotate(-.8deg); } to { transform: rotate(.8deg); } }
   .head-sway { transform-origin: 0 0; animation: headSway var(--d) ease-in-out infinite alternate; }
   @keyframes headSway { from { transform: rotate(calc(var(--a) * -1)); } to { transform: rotate(var(--a)); } }
   .stat-sway { transform-origin: 0 40px; animation: headSway var(--d) ease-in-out infinite alternate; }
@@ -219,6 +243,8 @@
 <script>
 (() => {
   const NS = "http://www.w3.org/2000/svg";
+  // phones and tablets get a lighter drawing (fewer seed dots) so the bloom stays smooth
+  const SMALL = matchMedia("(hover: none), (max-width: 700px)").matches;
   const el = (tag, attrs, parent) => {
     const e = document.createElementNS(NS, tag);
     for (const k in attrs) e.setAttribute(k, attrs[k]);
@@ -266,7 +292,7 @@
     const { x, y, r, rot = 0, sy = 1, t = 0 } = o;
     const g0 = el("g", { transform: `translate(${x} ${y})` }, parent);
     const sway = el("g", { class: "head-sway", style: `--d:${R(4.5, 7.5).toFixed(2)}s;--a:${R(1.2, 2.6).toFixed(2)}deg` }, g0);
-    const tilt = el("g", { transform: `rotate(${rot}) scale(1 ${sy})`, filter: `url(#${p}headShadow)` }, sway);
+    const tilt = el("g", p === "b" ? { class: "tilt", transform: `rotate(${rot}) scale(1 ${sy})` } : { transform: `rotate(${rot}) scale(1 ${sy})`, filter: `url(#${p}headShadow)` }, sway);
     const disc = r * .4;
     const ring = (n, Lr, wr, fill, base, off, t0, step) => {
       for (let i = 0; i < n; i++) {
@@ -284,7 +310,7 @@
 
     const dg = el("g", { class: "disc", style: `--t:${t.toFixed(2)}s` }, tilt);
     el("circle", { r: disc, fill: `url(#${p}disc)` }, dg);
-    const N = Math.round(disc * disc / 40);
+    const N = Math.round(disc * disc / (SMALL ? 75 : 40));
     for (let k = 1; k <= N; k++) {
       const ang = k * 2.39996, rr = disc * .93 * Math.sqrt(k / N), q = rr / disc;
       const col = q < .32 ? pick(["#2f2f14", "#3b3816", "#262710"]) : q < .7 ? pick(["#4a300c", "#56370e", "#3f280a"]) : pick(["#70440f", "#80521a", "#5e3a0c", "#a06a1c"]);
@@ -322,6 +348,10 @@
 
   /* ---------- build the bouquet (coordinates follow the photo) ---------- */
   const svg = document.getElementById("bouquet");
+  let built = false;
+  function buildBouquet() {
+  if (built) return;
+  built = true;
   defs(svg, "b");
   const all = el("g", { class: "sway-all" }, svg);
 
@@ -525,6 +555,8 @@
   el("path", { d: "M690 1548C760 1520 850 1525 920 1560M1000 1556C1070 1522 1160 1520 1220 1545M935 1600L880 1880M990 1600L1095 1860", fill: "none", stroke: "#ffffff", "stroke-opacity": .16, "stroke-width": 6, "stroke-linecap": "round" }, rib);
   el("ellipse", { cx: 945, cy: 1575, rx: 14, ry: 7, fill: "#ffffff", "fill-opacity": .18 }, rib);
 
+  }
+
   /* ---------- small static sunflower on the cover ---------- */
   const cs = document.getElementById("coverFlower");
   cs.classList.add("static");
@@ -543,8 +575,10 @@
     clearTimeout(bloomTimer);
     bloomTimer = setTimeout(() => card.classList.add("bloomed"), 4000);
   }
+  (window.requestIdleCallback || (f => setTimeout(f, 200)))(buildBouquet, { timeout: 1500 });
   function openCard() {
     if (card.classList.contains("open")) return;
+    buildBouquet();
     card.classList.add("open");
     room.classList.add("card-open-state");
     setTimeout(play, 450);
@@ -565,25 +599,28 @@
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   let W, H, motes = [];
   function size() {
-    const dpr = Math.min(devicePixelRatio || 1, 2);
+    const dpr = Math.min(devicePixelRatio || 1, 1.5);
     W = cv.clientWidth; H = cv.clientHeight;
     cv.width = W * dpr; cv.height = H * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   size(); addEventListener("resize", size);
-  for (let i = 0; i < 46; i++) motes.push({ x: Math.random(), y: Math.random(), r: .8 + Math.random() * 2.4, s: .00006 + Math.random() * .00018, ph: Math.random() * 6.28 });
+  const sprite = document.createElement("canvas"); sprite.width = sprite.height = 64;
+  { const sx = sprite.getContext("2d"), g = sx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, "rgba(255, 214, 120, 1)"); g.addColorStop(1, "rgba(255, 214, 120, 0)");
+    sx.fillStyle = g; sx.fillRect(0, 0, 64, 64); }
+  const count = Math.round(Math.min(46, Math.max(18, innerWidth * innerHeight / 14000)));
+  for (let i = 0; i < count; i++) motes.push({ x: Math.random(), y: Math.random(), r: .8 + Math.random() * 2.4, s: .00006 + Math.random() * .00018, ph: Math.random() * 6.28 });
   function frame(ts) {
     ctx.clearRect(0, 0, W, H);
     for (const m of motes) {
       if (!reduce) { m.y -= m.s * 16; if (m.y < -.05) { m.y = 1.05; m.x = Math.random(); } }
       const x = (m.x + Math.sin(ts / 2400 + m.ph) * .015) * W, y = m.y * H;
-      const a = .35 + .35 * Math.sin(ts / 900 + m.ph);
-      const g = ctx.createRadialGradient(x, y, 0, x, y, m.r * 4);
-      g.addColorStop(0, `rgba(255, 214, 120, ${a})`);
-      g.addColorStop(1, "rgba(255, 214, 120, 0)");
-      ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(x, y, m.r * 4, 0, 6.283); ctx.fill();
+      const rr = m.r * 4;
+      ctx.globalAlpha = .35 + .35 * Math.sin(ts / 900 + m.ph);
+      ctx.drawImage(sprite, x - rr, y - rr, rr * 2, rr * 2);
     }
+    ctx.globalAlpha = 1;
     if (!reduce) requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
