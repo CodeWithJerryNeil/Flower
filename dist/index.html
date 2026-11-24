@@ -128,7 +128,6 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 6px; padding: 28px; text-align: center;
   }
-  .cover:focus-visible { outline: 3px solid var(--petal); outline-offset: 4px; border-radius: 6px; }
   .cover .back {
     transform: rotateY(180deg);
     background: linear-gradient(200deg, #f3ead9, #e9dcc6);
@@ -210,11 +209,12 @@
         </div>
       </section>
 
-      <div class="cover" id="cover" role="button" tabindex="0" aria-label="Open the card">
+      <div class="cover" id="cover" role="button" tabindex="-1" aria-label="Open the card">
         <div class="face">
           <svg id="coverFlower" viewBox="-170 -170 340 340" aria-hidden="true"></svg>
           <h1>A little sunshine</h1>
           <div class="for">just for you</div>
+          <button class="open-btn" id="openBtn" type="button">Open card</button>
         </div>
         <div class="back"></div>
       </div>
@@ -560,9 +560,10 @@
     card.classList.remove("open", "bloomed");
     room.classList.remove("card-open-state");
     setTimeout(() => svg.classList.remove("play"), 900);
+    document.getElementById("openBtn").focus();
   }
   document.getElementById("cover").addEventListener("click", openCard);
-  document.getElementById("cover").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCard(); } });
+  document.getElementById("openBtn").addEventListener("click", e => { e.stopPropagation(); openCard(); });
 
 
   /* ---------- drifting pollen in the window light ---------- */
