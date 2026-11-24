@@ -114,9 +114,9 @@
     color: var(--ink);
     opacity: 0;
     transform: translateY(10px);
-    transition: opacity 1.2s ease, transform 1.2s ease;
+    transition: opacity .45s ease, transform .45s ease;
   }
-  .card.bloomed .note { opacity: 1; transform: none; }
+  .card.bloomed .note { opacity: 1; transform: none; transition-duration: 1.2s; }
   .card.bloomed .inside { cursor: pointer; }
   .note [contenteditable] { outline: none; border-radius: 4px; }
   .note [contenteditable]:focus-visible { box-shadow: 0 0 0 2px rgba(245, 184, 0, .6); }
@@ -128,7 +128,7 @@
   .cover {
     transform-origin: left center;
     transform-style: preserve-3d;
-    transition: transform 1.5s cubic-bezier(.45, .05, .2, 1), visibility 0s linear 1.5s;
+    transition: transform 1.4s cubic-bezier(.5, .05, .25, 1), visibility 0s linear 0s;
     cursor: pointer;
     z-index: 2;
   }
@@ -169,7 +169,16 @@
   }
   .open-btn:focus-visible { outline: 3px solid var(--petal); outline-offset: 3px; }
   @keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-  .card.open .cover { transform: rotateY(-178deg); visibility: hidden; pointer-events: none; }
+  .card.open .cover { transform: rotateY(-178deg); visibility: hidden; pointer-events: none;
+    transition: transform 1.5s cubic-bezier(.45, .05, .2, 1), visibility 0s linear 1.5s; }
+  /* closing: once the cover lands, the card settles with a soft bump */
+  .card.settle { animation: settle .8s cubic-bezier(.3, .7, .3, 1); }
+  @keyframes settle {
+    0% { transform: none; }
+    30% { transform: translateY(6px) scale(.975) rotate(-.6deg); }
+    65% { transform: translateY(-3px) scale(1.008) rotate(.3deg); }
+    100% { transform: none; }
+  }
   .card.open { transform: translateX(0); }
 
   .hint { font-size: 12px; color: var(--ink-soft); }
@@ -585,12 +594,28 @@
     room.classList.add("card-open-state");
     setTimeout(play, 450);
   }
+  let closing = false;
   function closeCard() {
+    if (closing) return;
+    closing = true;
     clearTimeout(bloomTimer);
-    card.classList.remove("open", "bloomed");
-    room.classList.remove("card-open-state");
-    setTimeout(() => svg.classList.remove("play"), 900);
-    document.getElementById("openBtn").focus({ preventScroll: true });
+    // petals shake loose from the flower heads as the card begins to close
+    shedPetals(svg.getBoundingClientRect());
+    card.classList.remove("bloomed");
+    setTimeout(() => {
+      card.classList.remove("open");
+      room.classList.remove("card-open-state");
+    }, 350);
+    setTimeout(() => {
+      card.classList.remove("settle"); void card.offsetWidth; card.classList.add("settle");
+      sparkle(document.getElementById("coverFlower").getBoundingClientRect());
+    }, 350 + 1250);
+    setTimeout(() => {
+      svg.classList.remove("play");
+      card.classList.remove("settle");
+      closing = false;
+      document.getElementById("openBtn").focus({ preventScroll: true });
+    }, 350 + 2100);
   }
   // once the bouquet and note have finished, tapping the card closes it again
   document.querySelector(".inside").addEventListener("click", () => {
@@ -621,7 +646,48 @@
     sx.fillStyle = g; sx.fillRect(0, 0, 64, 64); }
   const count = Math.round(Math.min(46, Math.max(18, innerWidth * innerHeight / 14000)));
   for (let i = 0; i < count; i++) motes.push({ x: Math.random(), y: Math.random(), r: .8 + Math.random() * 2.4, s: .00006 + Math.random() * .00018, ph: Math.random() * 6.28 });
+  /* closing effects: falling petals and a burst of golden sparkles */
+  let bits = [], lastTs = 0;
+  const PETAL = ["#f7c21a", "#f5b400", "#ffd02a", "#e8a400"];
+  function shedPetals(r) {
+    if (reduce) return;
+    for (let i = 0; i < 26; i++) bits.push({ kind: "petal",
+      x: r.left + r.width * (.2 + Math.random() * .6), y: r.top + r.height * (.15 + Math.random() * .35),
+      vx: (Math.random() - .5) * 60, vy: -40 - Math.random() * 80, rot: Math.random() * 6.28, vr: (Math.random() - .5) * 5,
+      w: 4 + Math.random() * 4, h: 12 + Math.random() * 9, ph: Math.random() * 6.28,
+      c: PETAL[i % PETAL.length], age: -Math.random() * .35, life: 2.4 + Math.random() * 1.2 });
+  }
+  function sparkle(r) {
+    if (reduce) return;
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    for (let i = 0; i < 28; i++) {
+      const a = Math.random() * 6.28, sp = 110 + Math.random() * 160, r0 = r.width * .42;
+      bits.push({ kind: "spark", x: cx + Math.cos(a) * r0, y: cy + Math.sin(a) * r0, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: 1 + Math.random() * 1.4, age: 0, life: .8 + Math.random() * .6 });
+    }
+  }
+  function drawBits(dt) {
+    bits = bits.filter(b => (b.age += dt) < b.life);
+    for (const b of bits) {
+      if (b.age < 0) continue;
+      const k = b.age / b.life, fade = k > .7 ? 1 - (k - .7) / .3 : 1;
+      if (b.kind === "petal") {
+        b.vy += 140 * dt; b.vy = Math.min(b.vy, 130);
+        b.x += (b.vx + Math.sin(b.age * 3 + b.ph) * 45) * dt; b.y += b.vy * dt; b.rot += b.vr * dt;
+        ctx.save(); ctx.globalAlpha = fade; ctx.translate(b.x, b.y); ctx.rotate(b.rot);
+        ctx.scale(1, .55 + .45 * Math.abs(Math.sin(b.age * 4 + b.ph))); // flutter
+        ctx.fillStyle = b.c; ctx.beginPath(); ctx.ellipse(0, 0, b.w, b.h, 0, 0, 6.283); ctx.fill();
+        ctx.strokeStyle = "rgba(180,110,0,.35)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, -b.h * .8); ctx.lineTo(0, b.h * .8); ctx.stroke();
+        ctx.restore();
+      } else {
+        b.vx *= .94; b.vy *= .94; b.x += b.vx * dt; b.y += b.vy * dt;
+        const rr = b.r * 4; ctx.globalAlpha = fade;
+        ctx.drawImage(sprite, b.x - rr, b.y - rr, rr * 2, rr * 2);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
   function frame(ts) {
+    const dt = Math.min(.05, (ts - (lastTs || ts)) / 1000); lastTs = ts;
     ctx.clearRect(0, 0, W, H);
     for (const m of motes) {
       if (!reduce) { m.y -= m.s * 16; if (m.y < -.05) { m.y = 1.05; m.x = Math.random(); } }
@@ -631,6 +697,7 @@
       ctx.drawImage(sprite, x - rr, y - rr, rr * 2, rr * 2);
     }
     ctx.globalAlpha = 1;
+    drawBits(dt);
     if (!reduce) requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
