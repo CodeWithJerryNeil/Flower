@@ -151,15 +151,6 @@
   .card.open .cover { transform: rotateY(-178deg); visibility: hidden; pointer-events: none; }
   .card.open { transform: translateX(0); }
 
-  .controls { display: flex; gap: 10px; align-items: center; z-index: 4; opacity: 0; transition: opacity .8s ease 1s; flex-wrap: wrap; justify-content: center; }
-  .card-open-state .controls { opacity: 1; }
-  .controls button {
-    font: 600 12px/1 var(--font-ui); letter-spacing: .12em; text-transform: uppercase;
-    color: var(--ink); background: rgba(255, 252, 245, .75);
-    border: 1px solid rgba(59, 44, 30, .25); border-radius: 999px; padding: 10px 16px; cursor: pointer;
-  }
-  .controls button:hover { background: #fffdf8; }
-  .controls button:focus-visible { outline: 3px solid var(--petal); outline-offset: 2px; }
   .hint { font-size: 12px; color: var(--ink-soft); }
 
   /* ---------- bouquet animation ---------- */
