@@ -205,9 +205,9 @@
       <section class="inside" aria-label="Inside of the card">
         <svg class="bouquet" id="bouquet" viewBox="170 40 1600 1880" preserveAspectRatio="xMidYMid meet" role="img" aria-label="A bouquet of seven sunflowers and purple statice, wrapped in white paper and tied with a black ribbon"></svg>
         <div class="note">
-          <div class="to" id="note-to" contenteditable="true" spellcheck="false" aria-label="Recipient">For you,</div>
-          <div class="msg" id="note-msg" contenteditable="true" spellcheck="false" aria-label="Message">may your days be as bright and warm as these sunflowers.</div>
-          <div class="from" id="note-from" contenteditable="true" spellcheck="false" aria-label="Signature">With love ♥</div>
+          <div class="to">For you,</div>
+          <div class="msg">may your days be as bright and warm as these sunflowers.</div>
+          <div class="from">Have a nice day 🐝</div>
         </div>
       </section>
 
@@ -223,11 +223,6 @@
     </div>
   </div>
 
-  <div class="controls" id="controls">
-    <button type="button" id="replayBtn">Replay bloom</button>
-    <button type="button" id="closeBtn">Close card</button>
-    <span class="hint">Tap the note to write your own</span>
-  </div>
 </main>
 
 <script>
@@ -466,16 +461,7 @@
   }
   document.getElementById("cover").addEventListener("click", openCard);
   document.getElementById("openBtn").addEventListener("click", e => { e.stopPropagation(); openCard(); });
-  document.getElementById("replayBtn").addEventListener("click", play);
-  document.getElementById("closeBtn").addEventListener("click", closeCard);
 
-  // remember the viewer's own note text
-  ["note-to", "note-msg", "note-from"].forEach(id => {
-    const n = document.getElementById(id);
-    try { const v = localStorage.getItem("sunflower-" + id); if (v) n.textContent = v; } catch (e) {}
-    n.addEventListener("input", () => { try { localStorage.setItem("sunflower-" + id, n.textContent); } catch (e) {} });
-    n.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); n.blur(); } });
-  });
 
   /* ---------- drifting pollen in the window light ---------- */
   const cv = document.getElementById("pollen");
