@@ -334,23 +334,102 @@
   defs(svg, "b");
   const all = el("g", { class: "sway-all" }, svg);
 
-  // back paper sheets fanning out behind the flowers
-  const back = el("g", { class: "wrap", style: "--t:2s", filter: "url(#bsoft)" }, all);
-  // one continuous paper silhouette joining every pleat down to the neck
-  el("path", { d: "M780 1470L560 1260L330 920L212 600Q300 500 410 430Q470 330 552 215Q700 165 872 128L884 92Q990 66 1102 78L1132 212Q1270 228 1392 252Q1390 350 1385 450L1525 432Q1640 470 1722 528L1515 960L1300 1290L1140 1470Z", fill: "url(#bpaperL)", stroke: "#d8d1c4", "stroke-width": 3 }, back);
-  const sheets = [
-    { d: "M450 1060L212 600Q300 500 410 430L585 405L660 980Z", r: -40, t: 2.0, f: "paperL" },
-    { d: "M1420 1060L1385 450L1525 432Q1640 470 1722 528L1560 1060Z", r: 40, t: 2.05, f: "paper" },
-    { d: "M560 900L552 215Q700 165 872 128L885 900Z", r: -22, t: 2.15, f: "paperL" },
-    { d: "M1118 900L1132 212Q1270 228 1392 252L1405 900Z", r: 22, t: 2.2, f: "paper" },
-    { d: "M858 900L884 92Q990 66 1102 78L1152 900Z", r: 0, t: 2.3, f: "paper" },
-  ];
-  sheets.forEach(s => {
-    const g = el("g", { class: "pleat" }, back);
-    el("path", { d: s.d, fill: `url(#b${s.f})`, stroke: "#d8d1c4", "stroke-width": 3 }, g);
-    // a soft fold shadow down one side of each sheet
-    el("path", { d: s.d, fill: "none", stroke: "#b7ad9c", "stroke-opacity": .18, "stroke-width": 16 }, g);
-  });
+  /* ---------- florist paper: grain, soft crumple and faint creases, drawn once ---------- */
+  function paperTexture() {
+    const S = 512, c = document.createElement("canvas"); c.width = c.height = S;
+    const x = c.getContext("2d"), img = x.createImageData(S, S), D = img.data;
+    const mk = n => Array.from({ length: n * n }, rnd);
+    const G1 = 6, g1 = mk(G1), G2 = 20, g2 = mk(G2);
+    const sm = t => t * t * (3 - 2 * t);
+    const vn = (g, n, u, v) => {
+      const X = u * n, Y = v * n, i = Math.floor(X), j = Math.floor(Y), fx = sm(X - i), fy = sm(Y - j);
+      const at = (a, b) => g[(b % n) * n + (a % n)];
+      return (at(i, j) * (1 - fx) + at(i + 1, j) * fx) * (1 - fy) + (at(i, j + 1) * (1 - fx) + at(i + 1, j + 1) * fx) * fy;
+    };
+    for (let py = 0; py < S; py++) for (let px = 0; px < S; px++) {
+      const u = px / S, v = py / S, k = (py * S + px) * 4;
+      const n = vn(g1, G1, u, v) * .6 + vn(g2, G2, u, v) * .4 + (Math.random() - .5) * .16;
+      if (n > .5) { D[k] = D[k + 1] = D[k + 2] = 255; D[k + 3] = Math.min(255, (n - .5) * 260); }
+      else { D[k] = 112; D[k + 1] = 96; D[k + 2] = 70; D[k + 3] = Math.min(255, (.5 - n) * 110); }
+    }
+    x.putImageData(img, 0, 0);
+    for (let i = 0; i < 16; i++) {
+      const x0 = R(0, S), y0 = R(0, S), a = R(0, Math.PI), L = R(70, 240);
+      const x1 = x0 + Math.cos(a) * L, y1 = y0 + Math.sin(a) * L;
+      x.lineWidth = 1.3;
+      x.strokeStyle = "rgba(112,96,70,.11)"; x.beginPath(); x.moveTo(x0, y0); x.lineTo(x1, y1); x.stroke();
+      x.strokeStyle = "rgba(255,255,255,.6)"; x.beginPath(); x.moveTo(x0 + 1.4, y0 + 1.4); x.lineTo(x1 + 1.4, y1 + 1.4); x.stroke();
+    }
+    return c.toDataURL("image/png");
+  }
+  const dd = svg.querySelector("defs");
+  const tex = el("pattern", { id: "btex", patternUnits: "userSpaceOnUse", width: 640, height: 640 }, dd);
+  el("image", { href: paperTexture(), width: 640, height: 640, preserveAspectRatio: "none" }, tex);
+  const ps = el("filter", { id: "bpleat", x: "-15%", y: "-15%", width: "130%", height: "130%" }, dd);
+  el("feDropShadow", { dx: -3, dy: 8, stdDeviation: 9, "flood-color": "#5a4426", "flood-opacity": .2 }, ps);
+  let uid = 0;
+  const grad = (x1, y1, x2, y2, stops) => {
+    const id = "bg" + (uid++);
+    const g = el("linearGradient", { id, gradientUnits: "userSpaceOnUse", x1, y1, x2, y2 }, dd);
+    stops.forEach(([o, c, op]) => el("stop", { offset: o, "stop-color": c, "stop-opacity": op ?? 1 }, g));
+    return `url(#${id})`;
+  };
+  const clip = d => { const id = "bc" + (uid++); el("path", { d }, el("clipPath", { id }, dd)); return `url(#${id})`; };
+  const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+  const f1 = v => v.toFixed(1);
+  const pt = v => `${f1(v[0])} ${f1(v[1])}`;
+  const shades = {
+    left:   [["0", "#f6f3ec"], [".35", "#ffffff"], [".75", "#efebe3"], ["1", "#d9d1c3"]],
+    right:  [["0", "#d9d1c3"], [".25", "#efebe3"], [".65", "#ffffff"], ["1", "#f6f3ec"]],
+    center: [["0", "#e2dbcf"], [".3", "#fbfaf6"], [".6", "#ffffff"], ["1", "#e4ddd1"]],
+  };
+
+  // one sheet of paper: wide at the top, gathered into the neck at the bottom
+  function sheet(parent, s) {
+    const { tl, tr, bl, br, lit = "center", bulge = 40 } = s;
+    const C = [(tl[0] + tr[0] + bl[0] + br[0]) / 4, (tl[1] + tr[1] + bl[1] + br[1]) / 4];
+    const side = (a, b) => { // control points for a gently bowed side from a to b, bowing away from the centre
+      const v = [b[0] - a[0], b[1] - a[1]], L = Math.hypot(...v); let n = [v[1] / L, -v[0] / L];
+      const m = lerp(a, b, .5); if (n[0] * (m[0] - C[0]) + n[1] * (m[1] - C[1]) < 0) n = [-n[0], -n[1]];
+      const c1 = lerp(a, b, .35), c2 = lerp(a, b, .75);
+      return [[c1[0] + n[0] * bulge, c1[1] + n[1] * bulge], [c2[0] + n[0] * bulge * .5, c2[1] + n[1] * bulge * .5]];
+    };
+    const e = [tr[0] - tl[0], tr[1] - tl[1]], eL = Math.hypot(...e), up = [e[1] / eL, -e[0] / eL];
+    const w1 = R(-6, 16), w2 = R(-6, 16);
+    const t1 = lerp(tl, tr, .33), t2 = lerp(tl, tr, .66);
+    const tc1 = [t1[0] + up[0] * w1, t1[1] + up[1] * w1], tc2 = [t2[0] + up[0] * w2, t2[1] + up[1] * w2];
+    const [l1, l2] = side(bl, tl), [r1, r2] = side(tr, br);
+    const top = `M${pt(tl)}C${pt(tc1)} ${pt(tc2)} ${pt(tr)}`;
+    const d = `M${pt(bl)}C${pt(l1)} ${pt(l2)} ${pt(tl)}C${pt(tc1)} ${pt(tc2)} ${pt(tr)}C${pt(r1)} ${pt(r2)} ${pt(br)}Z`;
+    const g = el("g", { class: "pleat", filter: "url(#bpleat)" }, parent);
+    const a = lerp(tl, bl, .25), b = lerp(tr, br, .25);
+    el("path", { d, fill: grad(f1(a[0]), f1(a[1]), f1(b[0]), f1(b[1]), shades[lit]) }, g);
+    const tm = lerp(tl, tr, .5);
+    el("path", { d, fill: grad(f1(tm[0]), f1(tm[1]), f1(tm[0]), f1(tm[1] + 700), [["0", "#6e5a3c", 0], [".35", "#6e5a3c", .04], ["1", "#6e5a3c", .26]]) }, g);
+    el("path", { d, fill: "url(#btex)", opacity: .38 }, g);
+    const cg = el("g", { "clip-path": clip(d) }, g);
+    // the top edge curls forward: a soft shadow just under it and a bright rolled rim
+    el("path", { d: top, transform: `translate(${f1(-up[0] * 16)} ${f1(-up[1] * 16)})`, fill: "none", stroke: "#6e5a3c", "stroke-opacity": .06, "stroke-width": 26 }, cg);
+    el("path", { d: top, transform: `translate(${f1(-up[0] * 5)} ${f1(-up[1] * 5)})`, fill: "none", stroke: "#ffffff", "stroke-width": 9 }, cg);
+    // a long soft fold down the sheet
+    const fa = lerp(tl, tr, R(.3, .7)), fb = lerp(bl, br, .5);
+    el("path", { d: `M${pt(fa)}L${pt(fb)}`, stroke: "#7a6648", "stroke-opacity": .06, "stroke-width": 30, fill: "none" }, cg);
+    el("path", { d: `M${pt([fa[0] + 9, fa[1]])}L${pt([fb[0] + 9, fb[1]])}`, stroke: "#ffffff", "stroke-opacity": .7, "stroke-width": 5, fill: "none" }, cg);
+    el("path", { d, fill: "none", stroke: "#cdc3b2", "stroke-width": 2.5 }, g);
+  }
+
+  // back of the wrap: the shaded inside of the paper, then five sheets gathered at the neck
+  const back = el("g", { class: "wrap", style: "--t:2s" }, all);
+  const inner = "M520 480L600 260L890 170L1100 200L1380 280L1400 500L1480 900L1100 1450L820 1450L420 900Z";
+  el("path", { d: inner, fill: grad(960, 200, 960, 1100, [["0", "#efe9de"], ["1", "#d6ccbb"]]) }, back);
+  el("path", { d: inner, fill: "url(#btex)", opacity: .5 }, back);
+  [
+    { tl: [878, 92], tr: [1104, 80], bl: [915, 1430], br: [1010, 1430], lit: "center", bulge: 26 },
+    { tl: [548, 222], tr: [872, 130], bl: [860, 1440], br: [950, 1440], lit: "left", bulge: 40 },
+    { tl: [1128, 214], tr: [1394, 256], bl: [975, 1440], br: [1070, 1440], lit: "right", bulge: 40 },
+    { tl: [206, 606], tr: [575, 400], bl: [820, 1450], br: [905, 1450], lit: "left", bulge: 70 },
+    { tl: [1380, 445], tr: [1724, 530], bl: [1025, 1450], br: [1110, 1450], lit: "right", bulge: 70 },
+  ].forEach(o => sheet(back, o));
 
   // statice behind the flowers
   const backStat = el("g", {}, all);
@@ -399,21 +478,47 @@
     { x: 1025, y: 1095, w: 70, h: 40, n: 45, t: 1.65 },
   ].forEach(o => statice(frontStat, o));
 
-  // front wrapping, two layered lips and the narrow neck
-  const front = el("g", { class: "wrap", style: "--t:2s", filter: "url(#bsoft)" }, all);
-  const fr = (d, fill, t, extra = {}) => {
-    const g = el("g", { class: "pleat" }, front);
-    el("path", { d, fill, stroke: "#d6cfc1", "stroke-width": 3, ...extra }, g);
-    return g;
+  // front of the wrap: the gathered neck, then two cone layers whose top edges fold over
+  const front = el("g", { class: "wrap", style: "--t:2s" }, all);
+  const crease = (parent, d, w = 8) => {
+    el("path", { d, fill: "none", stroke: "#6e5a3c", "stroke-opacity": .055, "stroke-width": w * 3.2, "stroke-linecap": "round" }, parent);
+    el("path", { d, transform: "translate(5 0)", fill: "none", stroke: "#ffffff", "stroke-opacity": .5, "stroke-width": w * .5, "stroke-linecap": "round" }, parent);
   };
-  fr("M760 1440L1160 1440C1150 1600 1160 1760 1195 1930L725 1930C760 1760 770 1600 760 1440Z", "url(#bfront)", 2.5);
-  const f1 = fr("M340 930C420 1045 600 1125 900 1142C1200 1132 1400 1062 1512 950C1522 1050 1482 1142 1402 1212C1252 1322 1152 1382 1122 1462L800 1462C760 1382 640 1312 520 1222C420 1142 360 1052 340 930Z", "url(#bfront)", 2.55);
-  el("path", { d: "M340 930C420 1045 600 1125 900 1142C1200 1132 1400 1062 1512 950", fill: "none", stroke: "#ffffff", "stroke-width": 6, "stroke-opacity": .9 }, f1);
-  const f2 = fr("M372 1025C472 1112 652 1172 922 1182C1182 1172 1382 1112 1492 1022C1462 1132 1382 1232 1272 1302C1182 1362 1152 1422 1152 1502L778 1502C770 1422 720 1372 640 1312C520 1222 422 1132 372 1025Z", "url(#bfront)", 2.6);
-  el("path", { d: "M372 1025C472 1112 652 1172 922 1182C1182 1172 1382 1112 1492 1022C1462 1132 1382 1232 1272 1302C1182 1362 1152 1422 1152 1502L778 1502C770 1422 720 1372 640 1312C520 1222 422 1132 372 1025Z", fill: "url(#bfrontShade)" }, f2);
-  el("path", { d: "M372 1025C472 1112 652 1172 922 1182C1182 1172 1382 1112 1492 1022", fill: "none", stroke: "#ffffff", "stroke-width": 6 }, f2);
-  // crease lines on the cone
-  el("path", { d: "M620 1240Q760 1330 800 1500M1290 1260Q1170 1360 1150 1500", fill: "none", stroke: "#cfc7b8", "stroke-width": 3, "stroke-opacity": .7 }, f2);
+  function layer(d, cyl, lip, folds) {
+    const g = el("g", { class: "pleat", filter: "url(#bpleat)" }, front);
+    el("path", { d, fill: cyl }, g);
+    el("path", { d, fill: "url(#btex)", opacity: .38 }, g);
+    const cg = el("g", { "clip-path": clip(d) }, g);
+    // soft vertical shading toward the neck
+    el("path", { d, fill: grad(0, 900, 0, 1520, [["0", "#6e5a3c", 0], [".6", "#6e5a3c", .03], ["1", "#6e5a3c", .2]]) }, cg);
+    folds.forEach(f => crease(cg, f, 9));
+    if (lip) {
+      // the turned-over top edge of the paper, with the shadow it casts
+      el("path", { d: lip.under, fill: "none", stroke: "#6e5a3c", "stroke-opacity": .14, "stroke-width": 16 }, cg);
+      el("path", { d: lip.band, fill: grad(0, 950, 0, 1220, [["0", "#ffffff"], ["1", "#f4f0e8"]]) }, cg);
+      el("path", { d: lip.band, fill: "url(#btex)", opacity: .25 }, cg);
+      el("path", { d: lip.edge, fill: "none", stroke: "#ffffff", "stroke-width": 7 }, cg);
+    }
+    el("path", { d, fill: "none", stroke: "#cdc3b2", "stroke-width": 2.5 }, g);
+    return g;
+  }
+  const neckD = "M760 1440L1160 1440C1150 1600 1160 1760 1195 1930L725 1930C760 1760 770 1600 760 1440Z";
+  layer(neckD, grad(725, 0, 1195, 0, [["0", "#ddd5c7"], [".3", "#fbf9f4"], [".55", "#ffffff"], ["1", "#d6cdbd"]]), null, [
+    "M778 1450Q850 1510 915 1568", "M835 1446Q880 1500 935 1560", "M1142 1450Q1060 1510 1000 1568", "M1088 1446Q1040 1500 985 1560",
+    "M930 1605Q860 1760 770 1925", "M952 1612Q900 1770 860 1925", "M982 1612Q1020 1770 1065 1925", "M1002 1605Q1080 1760 1160 1925",
+  ]);
+  const toNeck = pts => pts.map(([x, y]) => `M${x} ${y}Q${(x + 960) / 2 + (x < 960 ? 40 : -40)} ${(y + 1510) / 2} 960 1510`);
+  const cyl = grad(340, 0, 1512, 0, [["0", "#ddd5c7"], [".18", "#f7f4ee"], [".45", "#ffffff"], [".78", "#f0ece4"], ["1", "#d3cab9"]]);
+  layer("M340 930C420 1045 600 1125 900 1142C1200 1132 1400 1062 1512 950C1522 1050 1482 1142 1402 1212C1252 1322 1152 1382 1122 1462L800 1462C760 1382 640 1312 520 1222C420 1142 360 1052 340 930Z", cyl, {
+    edge: "M340 930C420 1045 600 1125 900 1142C1200 1132 1400 1062 1512 950",
+    band: "M340 930C420 1045 600 1125 900 1142C1200 1132 1400 1062 1512 950L1508 990C1396 1100 1200 1170 900 1180C600 1162 418 1082 344 972Z",
+    under: "M344 990C418 1100 600 1180 900 1198C1200 1188 1396 1118 1508 1008",
+  }, toNeck([[470, 1080], [1300, 1110]]));
+  layer("M372 1025C472 1112 652 1172 922 1182C1182 1172 1382 1112 1492 1022C1462 1132 1382 1232 1272 1302C1182 1362 1152 1422 1152 1502L778 1502C770 1422 720 1372 640 1312C520 1222 422 1132 372 1025Z", cyl, {
+    edge: "M372 1025C472 1112 652 1172 922 1182C1182 1172 1382 1112 1492 1022",
+    band: "M372 1025C472 1112 652 1172 922 1182C1182 1172 1382 1112 1492 1022L1484 1064C1376 1152 1180 1214 922 1222C650 1212 466 1152 378 1068Z",
+    under: "M378 1086C466 1170 650 1230 922 1240C1180 1232 1376 1170 1484 1082",
+  }, toNeck([[520, 1150], [720, 1205], [1180, 1205], [1370, 1140]]));
 
   // black satin ribbon bow
   const rib = el("g", { class: "ribbon", style: "--t:3.1s" }, all);
