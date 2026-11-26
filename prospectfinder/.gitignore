@@ -1,0 +1,6 @@
+# Project-wide ignores. backend/ and frontend/ have their own .gitignore files.
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea/
