@@ -1,12 +1,12 @@
 # Implementation Status
 
-Last updated: 2026-11-26 (Phase 1)
+Last updated: 2026-11-26 (Phase 2)
 
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 0 | Repository and environment setup | ✅ Complete |
 | 1 | Database migrations and models | ✅ Complete |
-| 2 | Backend foundation (auth, responses, policies) | Not started |
+| 2 | Backend foundation (auth, responses, policies) | ✅ Complete |
 | 3 | Business discovery providers | Not started |
 | 4 | Website detection | Not started |
 | 5 | Contact research | Not started |
@@ -41,8 +41,22 @@ Last updated: 2026-11-26 (Phase 1)
   Composer's GitHub archive downloads. `php -l` passes on all files. Install Larastan in an
   environment with GitHub package access.
 
+## Phase 2 — verified
+
+- [x] `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` with Sanctum bearer tokens (expiring)
+- [x] Verified over real HTTP: login → me → logout → token rejected; wrong password → generic 422
+- [x] No public registration; `prospectfinder:create-user` command for provisioning
+- [x] Login rate limiting (5/min per email+IP); API rate limit (120/min)
+- [x] Standard JSON envelope for success and all error classes; no internal details on 500
+- [x] Form Requests: StoreCampaign, UpdateCampaign, UpdateLead, StoreOutreachActivity
+- [x] API Resources: Campaign, Business, Contact, SocialProfile, WebsiteCheck, ProspectSource (+ User)
+- [x] Policies: Campaign, CampaignLead, OutreachActivity; ownership denials return 404
+- [x] 37 new tests (72 total passing)
+- [ ] Static analysis still blocked (see Phase 1)
+
 ## Known limitations
 
 - Playwright is not yet a project dependency (planned for Phase 16).
 - No provider credentials are configured; none are implemented.
+- Form Requests are tested through test-only routes; the real campaign/lead/outreach endpoints are Phase 8.
 - Frontend routing, TanStack Query provider, and form libraries are installed but not yet wired (Phase 9).

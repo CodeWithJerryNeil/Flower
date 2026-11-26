@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
@@ -23,11 +24,14 @@ class HealthController extends Controller
 
         $healthy = ! in_array(false, $checks, true);
 
-        return response()->json([
-            'success' => $healthy,
-            'message' => $healthy ? 'All systems operational.' : 'One or more services are unavailable.',
-            'data' => ['checks' => $checks],
-        ], $healthy ? 200 : 503);
+        // A 503 still carries the checks so callers can see which service is down.
+        return $healthy
+            ? ApiResponse::success(['checks' => $checks], 'All systems operational.')
+            : response()->json([
+                'success' => false,
+                'message' => 'One or more services are unavailable.',
+                'data' => ['checks' => $checks],
+            ], 503);
     }
 
     private function check(callable $probe): bool

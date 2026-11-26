@@ -56,3 +56,27 @@ Accessible both as `$campaign->businesses` (pivot exposed as `->lead`) and direc
 ## ADR-013 — Demo seeding is local-only and labelled (2026-11-26)
 Playbook rule: mocked data only in tests and clearly labelled demos. The seeder refuses to run
 outside local/testing and labels everything `[Demo]` with reserved domains.
+
+## ADR-014 — Sanctum bearer tokens, not cookie sessions (2026-11-26)
+The planned deployment puts the frontend (e.g. Cloudflare Pages) and backend on different
+hosts; SPA cookie auth requires same-site domains. Bearer tokens work under any layout and
+have no CSRF surface. Sanctum's `guard` is `[]` so session cookies never authenticate API
+calls. Tokens expire (default 7 days) and are pruned daily. Trade-off: the frontend must store
+the token; Phase 9 decides storage (XSS exposure is the main risk, mitigated by not rendering
+untrusted HTML).
+
+## ADR-015 — A "lead" is a CampaignLead (2026-11-26)
+Score, qualification status and notes are per campaign, and the Lead Explorer filters by
+campaign, so `/leads/{id}` addresses `campaign_leads.id`. Outreach and contacts belong to the
+business, so they are shared by every lead for that business (prevents double-contacting).
+
+## ADR-016 — Ownership denials return 404 (2026-11-26)
+Policies use `denyAsNotFound()` and Form Requests return the policy `Response` so the status
+is preserved. Another user's record is indistinguishable from a missing one.
+
+## ADR-017 — No registration endpoint; CLI provisioning (2026-11-26)
+`php artisan prospectfinder:create-user` (password ≥12 chars, prompted, never in shell history).
+
+## ADR-018 — Suppression blocks initiating outreach (2026-11-26)
+Recording `planned`/`contacted` outreach for a suppressed business is rejected. Logging replies
+or outcomes remains possible so history stays accurate.

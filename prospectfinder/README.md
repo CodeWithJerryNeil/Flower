@@ -4,8 +4,8 @@ A private lead generation and prospect research platform. It discovers local bus
 determines whether they have a dedicated website, researches publicly available business
 contact details with source traceability, and scores the results as prospects.
 
-> **Status:** Phase 0 (project initialization) complete. No discovery, research or lead
-> features exist yet. See [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md).
+> **Status:** Phases 0–2 complete (setup, database, authentication and API foundation).
+> No discovery, research or lead features exist yet. See [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md).
 
 ## Structure
 
@@ -44,8 +44,11 @@ composer install
 cp .env.example .env           # then set DB_PASSWORD etc.
 php artisan key:generate
 php artisan migrate
+php artisan prospectfinder:create-user you@example.com --name="Your Name"   # there is no signup page
 php artisan serve              # http://localhost:8000
 ```
+
+For local demo data instead: `php artisan db:seed` (local only; login `demo@prospectfinder.test` / `password`).
 
 Queue worker (required from Phase 7 onward):
 

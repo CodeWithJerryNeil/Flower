@@ -37,7 +37,8 @@ return [
     |
     */
 
-    'guard' => ['web'],
+    // Token-only API: never fall back to session cookies (no CSRF surface).
+    'guard' => [],
 
     /*
     |--------------------------------------------------------------------------
@@ -50,7 +51,7 @@ return [
     |
     */
 
-    'expiration' => null,
+    'expiration' => (int) env('SANCTUM_TOKEN_EXPIRATION', 60 * 24 * 7),
 
     /*
     |--------------------------------------------------------------------------

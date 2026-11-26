@@ -103,6 +103,17 @@ class Business extends Model
         return $this->suppressionEntries()->exists();
     }
 
+    /**
+     * Businesses the user can reach through at least one of their own campaigns.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function accessibleBy(Builder $query, User $user): void
+    {
+        $query->whereHas('campaigns', fn (Builder $campaigns) => $campaigns->where('campaigns.user_id', $user->getKey()));
+    }
+
     /** @param  Builder<self>  $query */
     #[Scope]
     protected function withWebsiteStatus(Builder $query, WebsiteStatus ...$statuses): void
