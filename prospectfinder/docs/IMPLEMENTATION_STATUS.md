@@ -1,11 +1,11 @@
 # Implementation Status
 
-Last updated: 2026-11-26
+Last updated: 2026-11-26 (Phase 1)
 
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 0 | Repository and environment setup | ✅ Complete |
-| 1 | Database migrations and models | Not started |
+| 1 | Database migrations and models | ✅ Complete |
 | 2 | Backend foundation (auth, responses, policies) | Not started |
 | 3 | Business discovery providers | Not started |
 | 4 | Website detection | Not started |
@@ -26,6 +26,20 @@ Last updated: 2026-11-26
 - [x] Git repository initialized (pre-existing repository)
 - [x] README contains setup instructions
 - [x] Sanctum installed (`personal_access_tokens` migration). Auth endpoints are Phase 2.
+
+## Phase 1 — verified
+
+- [x] 11 domain migrations; `migrate:fresh`, `migrate:refresh`, `migrate:reset` + `migrate` all succeed on PostgreSQL
+- [x] Models with relationships, enum casts, scopes; 11 backed enums in `app/Enums`
+- [x] Factories for every model; local-only labelled demo seeder
+- [x] Database tests (31 new, 35 total passing) covering the 10 playbook cases:
+  campaign→user, business→contacts, business→social profiles, business↔campaigns,
+  duplicate campaign/business rejected, provider identity unique, contact email dedupe,
+  website check history preserved, suppressed contacts identifiable, migrations from clean DB
+- [x] Also tested: cascades, CHECK constraints, invalid enum rejection, jsonb filters, scopes
+- [ ] Static analysis (Larastan) — **blocked**: the session network proxy returns 403 for
+  Composer's GitHub archive downloads. `php -l` passes on all files. Install Larastan in an
+  environment with GitHub package access.
 
 ## Known limitations
 
